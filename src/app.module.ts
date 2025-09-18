@@ -5,6 +5,10 @@ import { AppService } from './app.service';
 import { OauthModule } from './oauth/oauth.module';
 import { DatabaseModule } from './database/database.module';
 import { databaseConfig, appConfig, authConfig } from './config';
+import { WellknwonModule } from './wellknwon/wellknwon.module';
+import { WellknownController } from './wellknown/wellknown.controller';
+import { WellknownService } from './wellknown/wellknown.service';
+import { WellknownModule } from './wellknown/wellknown.module';
 
 @Module({
   imports: [
@@ -17,8 +21,10 @@ import { databaseConfig, appConfig, authConfig } from './config';
     }),
     DatabaseModule,
     OauthModule,
+    WellknwonModule,
+    WellknownModule,
   ],
-  controllers: [AppController],
-  providers: [AppService],
+  controllers: [AppController, WellknownController],
+  providers: [AppService, WellknownService],
 })
 export class AppModule {}
