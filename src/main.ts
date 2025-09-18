@@ -1,9 +1,21 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, Logger } from '@nestjs/common';
+import { NestExpressApplication } from '@nestjs/platform-express';
+import * as express from 'express';
+
 import { AppModule } from './app.module';
+import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const logger = new Logger('Bootstrap');
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+
+  // Trust proxies so req.protocol reflects X-Forwarded-Proto in proxied setups
+  app.set('trust proxy', true);
+
+  // Body parser configuration
+  app.use(express.json({ limit: '10mb' }));
+  app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
   // Global validation pipe
   app.useGlobalPipes(
@@ -13,6 +25,9 @@ async function bootstrap() {
       forbidNonWhitelisted: true,
     }),
   );
+
+  // Global exception filter
+  app.useGlobalFilters(new AllExceptionsFilter());
 
   // CORS configuration
   const corsOrigins = process.env.CORS_ORIGINS?.split(',') || [
@@ -28,15 +43,40 @@ async function bootstrap() {
   // Global prefix for API
   const globalPrefix = process.env.API_PREFIX || 'api';
   app.setGlobalPrefix(globalPrefix, {
-    exclude: ['health', '/'],
+    exclude: ['health', '/', '.well-known/*'],
   });
 
   const port = process.env.PORT || 3001;
-  await app.listen(port);
+  const host = process.env.HOST || '0.0.0.0';
 
-  console.log(
-    `🚀 Application is running on: http://localhost:${port}/${globalPrefix}`,
+  await app.listen(port, host);
+
+  logger.log(
+    `🚀 Application is running on: http://${host}:${port}/${globalPrefix}`,
   );
-  console.log(`📋 Health check: http://localhost:${port}/health`);
+  logger.log(`📋 Health check: http://localhost:${port}/health`);
+  logger.log(
+    `🔐 OAuth metadata: http://localhost:${port}/.well-known/oauth-authorization-server`,
+  );
+  logger.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
+
+  // Graceful shutdown
+  const gracefulShutdown = async (signal: string) => {
+    logger.log(`${signal} signal received, starting graceful shutdown...`);
+
+    try {
+      await app.close();
+      logger.log('Application closed successfully');
+      process.exit(0);
+    } catch (error) {
+      logger.error('Error during graceful shutdown:', error);
+      process.exit(1);
+    }
+  };
+
+  // Handle shutdown signals
+  process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+  process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 }
+
 bootstrap();

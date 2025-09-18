@@ -1,13 +1,12 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { OauthModule } from './oauth/oauth.module';
+import { CommonModule } from './common/common.module';
 import { DatabaseModule } from './database/database.module';
+import { OauthModule } from './oauth/oauth.module';
 import { databaseConfig, appConfig, authConfig } from './config';
-import { WellknwonModule } from './wellknwon/wellknwon.module';
-import { WellknownController } from './wellknown/wellknown.controller';
-import { WellknownService } from './wellknown/wellknown.service';
 import { WellknownModule } from './wellknown/wellknown.module';
 
 @Module({
@@ -19,12 +18,12 @@ import { WellknownModule } from './wellknown/wellknown.module';
       cache: true, // 설정값 캐싱 활성화
       expandVariables: true, // ${VAR} 형식의 변수 확장 지원
     }),
+    CommonModule, // Common module with middleware
     DatabaseModule,
     OauthModule,
-    WellknwonModule,
     WellknownModule,
   ],
-  controllers: [AppController, WellknownController],
-  providers: [AppService, WellknownService],
+  controllers: [AppController],
+  providers: [AppService],
 })
 export class AppModule {}
