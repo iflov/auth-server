@@ -67,7 +67,8 @@ export const oauthClients = pgTable(
       .notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true })
       .defaultNow()
-      .notNull(),
+      .notNull()
+      .$onUpdate(() => new Date()),
   },
   (table) => [
     uniqueIndex('idx_oauth_clients_client_id').on(table.clientId),
@@ -80,21 +81,19 @@ export const authCodes = pgTable(
   'auth_codes',
   {
     id: uuid('id').defaultRandom().primaryKey(),
-    code: varchar('code', { length: 512 }).unique().notNull(),
-    userId: uuid('user_id').notNull(),
-    clientId: varchar('client_id', { length: 255 }).notNull(),
-    codeChallenge: varchar('code_challenge', { length: 512 }), // PKCE support
+    code: varchar('code', { length: 512 }).primaryKey(),
+    userId: varchar('student_id', { length: 255 }).notNull(),
+    clientId: varchar('client_id', { length: 255 })
+      .notNull()
+      .references(() => oauthClients.clientId, { onDelete: 'cascade' }),
+    codeChallenge: varchar('code_challenge', { length: 512 }), // ChatGPT는 PKCE 미지원 - NULL 허용으로 변경
     codeChallengeMethod: varchar('code_challenge_method', {
       length: 10,
     }).default('S256'),
     redirectUri: text('redirect_uri').notNull(),
-    scope: text('scope').default('openid profile email'),
+    scope: text('scope').default('mcp:*'),
     state: text('state'),
-    nonce: text('nonce'), // OpenID Connect support
-    usedAt: timestamp('used_at', { withTimezone: true }),
-    createdAt: timestamp('created_at', { withTimezone: true })
-      .defaultNow()
-      .notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
     expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
   },
   (table) => [
@@ -247,6 +246,7 @@ export const auditLogs = pgTable(
     entityId: varchar('entity_id', { length: 255 }),
     userId: uuid('user_id'),
     clientId: varchar('client_id', { length: 255 }),
+    clientName: varchar('client_name', { length: 255 }),
     ipAddress: inet('ip_address'),
     userAgent: text('user_agent'),
     metadata: jsonb('metadata'),
