@@ -16,6 +16,7 @@ import {
 import { normalizeUrlFunction } from '../utils/normalizeUrl';
 import { generateAuthCode } from '../utils/generateAuthCode';
 import { AuthCodesRepository } from './repository/authCodes.repository';
+import { RequestRegisterDto } from './dto/request-register.dto';
 
 @Injectable()
 export class OauthService {
@@ -33,28 +34,28 @@ export class OauthService {
   }: {
     ip: string;
     userAgent: string;
-    oauthClient: CreateOAuthClientInput;
+    oauthClient: RequestRegisterDto;
   }) {
     const clientId: string =
-      oauthClient.clientId ||
+      oauthClient.client_id ||
       `client_${Date.now()}_${crypto.randomBytes(8).toString('hex')}`;
 
     const clientSecret: string =
-      oauthClient.clientSecret || crypto.randomBytes(32).toString('hex');
+      oauthClient.client_secret || crypto.randomBytes(32).toString('hex');
 
     const clientObject: CreateOAuthClientInput = {
       clientId,
       clientSecret,
-      clientName: oauthClient.clientName || 'Claude',
-      grantTypes: oauthClient.grantTypes || [
+      clientName: oauthClient.client_name || 'Claude',
+      grantTypes: oauthClient.grant_types || [
         'authorization_code',
         'refresh_token',
       ],
-      responseTypes: oauthClient.responseTypes || ['code'],
+      responseTypes: oauthClient.response_types || ['code'],
       tokenEndpointAuthMethod:
-        oauthClient.tokenEndpointAuthMethod || 'client_secret_post',
+        oauthClient.token_endpoint_auth_method || 'client_secret_post',
       scope: oauthClient.scope || 'claudeai',
-      redirectUris: oauthClient.redirectUris || [
+      redirectUris: oauthClient.redirect_uris || [
         'https://claude.ai/api/mcp/auth_callback',
       ],
     };
