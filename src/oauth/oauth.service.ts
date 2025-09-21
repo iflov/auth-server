@@ -10,13 +10,13 @@ import { AuditLogsRepository } from './repository/auditLogs.repository';
 import { OAuthClientRepository } from './repository/oauthClient.repository';
 import {
   AuditLogEntryInput,
-  CreateAuthorizationCodeInput,
   CreateOAuthClientInput,
 } from './types/oauth.types';
 import { normalizeUrlFunction } from '../utils/normalizeUrl';
 import { generateAuthCode } from '../utils/generateAuthCode';
 import { AuthCodesRepository } from './repository/authCodes.repository';
 import { RequestRegisterDto } from './dto/request-register.dto';
+import { PostAuthorizeDto } from './dto/post-authorize.dto';
 
 @Injectable()
 export class OauthService {
@@ -82,15 +82,15 @@ export class OauthService {
   }: {
     ip: string;
     userAgent: string;
-    body: CreateAuthorizationCodeInput;
+    body: PostAuthorizeDto;
   }) {
-    const client = await this.oauthClientRepository.findOne(body.clientId);
+    const client = await this.oauthClientRepository.findOne(body.client_id);
 
     if (!client) {
       throw new NotFoundException('Client not found');
     }
 
-    const normalizedRedirectUri = normalizeUrlFunction(body.redirectUri);
+    const normalizedRedirectUri = normalizeUrlFunction(body.redirect_uri);
 
     const redirectMatch = client.redirectUris.some((registeredUri) => {
       return normalizeUrlFunction(registeredUri) === normalizedRedirectUri;
@@ -107,14 +107,14 @@ export class OauthService {
 
     const authCode = generateAuthCode();
 
-    const authCodeInput: CreateAuthorizationCodeInput = {
+    const authCodeInput = {
       code: authCode,
-      userId: body.userId,
+      userId: body.user_id,
       clientId: client.clientId,
-      codeChallenge: body.codeChallenge ?? null, // ChatGPT는 PKCE 미지원
+      codeChallenge: body.code_challenge ?? null, // ChatGPT는 PKCE 미지원
       codeChallengeMethod:
-        body.codeChallengeMethod ?? (body.codeChallenge ? 'S256' : null),
-      redirectUri: body.redirectUri,
+        body.code_challenge_method ?? (body.code_challenge ? 'S256' : null),
+      redirectUri: body.redirect_uri,
       scope: body.scope ?? 'claudeai',
       state: body.state ?? null,
       expiresAt: new Date(Date.now() + ttlSeconds * 1000),
@@ -125,14 +125,14 @@ export class OauthService {
     await this.auditLogsRepository.create({
       eventType: 'authorization_granted',
       clientId: client.clientId,
-      userId: body.userId,
+      userId: body.user_id,
       ipAddress: ip,
       userAgent: userAgent,
     });
 
-    const redirectUrl = new URL(body.redirectUri);
+    const redirectUrl = new URL(body.redirect_uri);
     redirectUrl.searchParams.set('code', authCode);
-    redirectUrl.searchParams.set('state', body.state || '');
+    redirectUrl.searchParams.set('state', body.state ?? '');
 
     return redirectUrl.toString();
   }

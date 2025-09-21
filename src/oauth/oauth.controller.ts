@@ -2,8 +2,8 @@ import { Controller, Post, Ip, Headers, Redirect } from '@nestjs/common';
 import { Body } from '@nestjs/common';
 
 import { OauthService } from './oauth.service';
-import { CreateAuthorizationCodeInput } from './types/oauth.types';
 import { RequestRegisterDto } from './dto/request-register.dto';
+import { PostAuthorizeDto } from './dto/post-authorize.dto';
 
 @Controller('oauth')
 export class OauthController {
@@ -23,7 +23,7 @@ export class OauthController {
   async authorize(
     @Ip() ip: string,
     @Headers('user-agent') userAgent: string,
-    @Body() body: CreateAuthorizationCodeInput,
+    @Body() body: PostAuthorizeDto,
   ) {
     const redirectUrl = await this.oauthService.authorize({
       ip,
