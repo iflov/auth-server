@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Authorization Successful</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 450px;
+            text-align: center;
+            animation: slideUp 0.3s ease-out;
+        }
+        
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .success-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 20px;
+            background: #d4edda;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: scaleIn 0.5s ease-out 0.2s both;
+        }
+        
+        @keyframes scaleIn {
+            from {
+                transform: scale(0);
+            }
+            to {
+                transform: scale(1);
+            }
+        }
+        
+        .success-icon svg {
+            width: 40px;
+            height: 40px;
+            fill: #28a745;
+            animation: checkmark 0.3s ease-out 0.7s both;
+        }
+        
+        @keyframes checkmark {
+            from {
+                stroke-dashoffset: 100;
+            }
+            to {
+                stroke-dashoffset: 0;
+            }
+        }
+        
+        h1 {
+            color: #28a745;
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        
+        .message {
+            color: #333;
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+        
+        .redirect-notice {
+            background: #f8f9fa;
+            border-left: 4px solid #28a745;
+            padding: 16px;
+            border-radius: 4px;
+            text-align: left;
+            margin-bottom: 20px;
+        }
+        
+        .redirect-notice h3 {
+            color: #333;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        
+        .redirect-notice p {
+            color: #666;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        .spinner {
+            width: 24px;
+            height: 24px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .manual-redirect {
+            margin-top: 20px;
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .manual-redirect a {
+            color: #007bff;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        
+        .manual-redirect a:hover {
+            text-decoration: underline;
+        }
+    </style>
+    <script>
+        // Auto-redirect after 3 seconds
+        setTimeout(function() {
+            const redirectUrl = '{{REDIRECT_URL}}';
+            if (redirectUrl) {
+                window.location.href = redirectUrl;
+            }
+        }, 3000);
+    </script>
+</head>
+<body>
+    <div class="container">
+        <div class="success-icon">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+            </svg>
+        </div>
+        
+        <h1>Authorization Successful!</h1>
+        
+        <p class="message">
+            You have successfully authorized <strong>{{CLIENT_NAME}}</strong> to access your account.
+        </p>
+        
+        <div class="redirect-notice">
+            <h3>Redirecting...</h3>
+            <p>You will be redirected back to the application in a few seconds.</p>
+        </div>
+        
+        <div class="spinner"></div>
+        
+        <div class="manual-redirect">
+            If you are not redirected automatically, 
+            <a href="{{REDIRECT_URL}}">click here to continue</a>
+        </div>
+    </div>
+</body>
+</html>
