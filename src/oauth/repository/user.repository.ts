@@ -23,11 +23,11 @@ export class UserRepository {
       .limit(1);
 
     if (existingUser) {
-      // Update last activity
+      // Update last login
       await this.db
         .update(schema.users)
         .set({
-          lastActivity: new Date(),
+          lastLoginAt: new Date(),
           updatedAt: new Date(),
         })
         .where(eq(schema.users.id, userId));
@@ -39,9 +39,8 @@ export class UserRepository {
     const insertPayload: typeof schema.users.$inferInsert = {
       id: userId,
       email: `user-${userId}@example.com`, // Placeholder email
-      firstName: 'User',
-      lastName: userId.substring(0, 8),
-      lastActivity: new Date(),
+      name: `User ${userId.substring(0, 8)}`,
+      lastLoginAt: new Date(),
     };
 
     const [newUser] = await this.db
@@ -66,7 +65,7 @@ export class UserRepository {
     await this.db
       .update(schema.users)
       .set({
-        lastActivity: new Date(),
+        lastLoginAt: new Date(),
         updatedAt: new Date(),
       })
       .where(eq(schema.users.id, userId));

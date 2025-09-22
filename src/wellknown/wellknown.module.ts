@@ -1,9 +1,7 @@
 import { Module } from '@nestjs/common';
-import { WellknownController } from './wellknown.controller';
-import { WellknownService } from './wellknown.service';
+import { WellKnownController } from './wellknown.controller';
 
 @Module({
-  controllers: [WellknownController],
-  providers: [WellknownService],
+  controllers: [WellKnownController],
 })
 export class WellknownModule {}
