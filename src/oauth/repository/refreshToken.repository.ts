@@ -77,4 +77,9 @@ export class RefreshTokenRepository {
       .delete(schema.refreshTokens)
       .where(eq(schema.refreshTokens.clientId, clientId));
   }
+
+  async revokeToken(token: string) {
+    // Same as deleteByToken but named for clarity in revocation context
+    await this.deleteByToken(token);
+  }
 }

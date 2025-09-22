@@ -21,6 +21,8 @@ import { OAuthUnauthorizedFilter } from './filters/oauth-unauthorized.filter';
 import { ClientAuthGuard, ClientAuthInfo } from './guards/client-auth.guard';
 import { ClientAuth } from './decorators/client-auth.decorator';
 import { TokenRequestDto } from './dto/post-token.dto';
+import { PostIntrospectDto } from './dto/post-introspect.dto';
+import { RevokeDto } from './dto/post-revoke.dto';
 
 @Controller('oauth')
 @UseFilters(OAuthUnauthorizedFilter) // Apply OAuth 401 filter to all routes
@@ -94,5 +96,32 @@ export class OauthController {
       ip,
       userAgent,
     );
+  }
+
+  @Post('introspect')
+  @UseGuards(ClientAuthGuard)
+  async introspect(
+    @ClientAuth() clientAuth: ClientAuthInfo,
+    @Body() body: PostIntrospectDto,
+    @Ip() ip: string,
+    @Headers('user-agent') userAgent: string,
+  ) {
+    return this.oauthService.introspect(
+      clientAuth.clientId,
+      body,
+      ip,
+      userAgent,
+    );
+  }
+
+  @Post('revoke')
+  @UseGuards(ClientAuthGuard)
+  async revoke(
+    @ClientAuth() clientAuth: ClientAuthInfo,
+    @Body() body: RevokeDto,
+    @Ip() ip: string,
+    @Headers('user-agent') userAgent: string,
+  ) {
+    return this.oauthService.revoke(clientAuth.clientId, body, ip, userAgent);
   }
 }

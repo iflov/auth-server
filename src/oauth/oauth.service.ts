@@ -401,6 +401,114 @@ export class OauthService {
   }
 
   /**
+   * Token introspection - 토큰 정보 확인
+   */
+  async introspect(
+    clientId: string,
+    body: { token: string; token_type_hint?: string },
+    ip: string,
+    userAgent: string,
+  ) {
+    try {
+      const { token, token_type_hint } = body;
+
+      if (!token) {
+        return { active: false };
+      }
+
+      // Try to validate as access token
+      const tokenHash = this.hashToken(token);
+      const tokenInfo =
+        await this.accessTokenRepository.findByTokenHash(tokenHash);
+
+      if (tokenInfo) {
+        // Check if the requesting client is authorized to introspect this token
+        // Only allow if:
+        // 1. The client is the one that issued the token, OR
+        // 2. The client is authenticated (confidential client with valid credentials)
+        if (clientId && clientId === tokenInfo.clientId) {
+          const expiresAt =
+            tokenInfo.expiresAt || new Date(Date.now() + 3600000); // Default 1 hour if not set
+          const createdAt = tokenInfo.createdAt || new Date();
+
+          return {
+            active: true,
+            scope: tokenInfo.scope || 'default',
+            client_id: tokenInfo.clientId,
+            username: tokenInfo.userId,
+            token_type: 'Bearer',
+            exp: Math.floor(expiresAt.getTime() / 1000),
+            iat: Math.floor(createdAt.getTime() / 1000),
+            sub: tokenInfo.userId,
+          };
+        } else {
+          // Client not authorized to introspect this token
+          return { active: false };
+        }
+      }
+
+      // If not found as access token, return inactive
+      return { active: false };
+    } catch (error) {
+      console.error('Introspection error:', error);
+      // Per OAuth spec, always return a response even on error
+      return { active: false };
+    }
+  }
+
+  /**
+   * Token revocation - 토큰 무효화
+   */
+  async revoke(
+    clientId: string,
+    body: { token: string; token_type_hint?: string },
+    ip: string,
+    userAgent: string,
+  ) {
+    try {
+      const { token, token_type_hint } = body;
+
+      if (!token) {
+        // Per spec, always return 200 even if token is missing
+        return;
+      }
+
+      // Check refresh token ownership if client is authenticated
+      if (clientId) {
+        const refreshToken =
+          await this.refreshTokenRepository.findByToken(token);
+        if (refreshToken && refreshToken.clientId !== clientId) {
+          // Client doesn't own this token, silently fail per OAuth spec
+          return;
+        }
+      }
+
+      // Try to revoke as refresh token
+      await this.refreshTokenRepository.revokeToken(token);
+
+      // Also try to revoke as access token (by hash)
+      const tokenHash = this.hashToken(token);
+      await this.accessTokenRepository.revokeByTokenHash(tokenHash);
+
+      // Log revocation with client info
+      await this.auditLogsRepository.create({
+        eventType: 'token_revoked',
+        clientId: clientId || null,
+        userId: null,
+        ipAddress: ip,
+        userAgent: userAgent,
+      });
+
+      // Per spec, always return successfully
+      return;
+    } catch (error) {
+      // Per spec, always return 200 even on error
+      console.error('Revocation error:', error);
+      return;
+    }
+  }
+
+  /**
    * Helper Methods for Token Management
    */
 

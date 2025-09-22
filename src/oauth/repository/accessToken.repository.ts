@@ -83,4 +83,9 @@ export class AccessTokenRepository {
       .delete(schema.accessTokens)
       .where(eq(schema.accessTokens.expiresAt, new Date()));
   }
+
+  async revokeByTokenHash(tokenHash: string) {
+    // Same as deleteByTokenHash but named for clarity in revocation context
+    await this.deleteByTokenHash(tokenHash);
+  }
 }
