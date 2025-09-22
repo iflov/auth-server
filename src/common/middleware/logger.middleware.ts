@@ -9,11 +9,21 @@ export class LoggerMiddleware implements NestMiddleware {
     const { method, originalUrl, body } = req;
     const startTime = Date.now();
 
+    // Skip logging for favicon requests
+    const skipPaths = ['/favicon.ico'];
+    const shouldSkip = skipPaths.includes(originalUrl);
+
     // Log request
-    this.logger.log(`⟶  ${method} ${originalUrl}`);
+    if (!shouldSkip) {
+      this.logger.log(`⟶  ${method} ${originalUrl}`);
+    }
 
     // Log request body in development
-    if (process.env.NODE_ENV !== 'production' && Object.keys(body).length > 0) {
+    if (
+      process.env.NODE_ENV !== 'production' &&
+      body &&
+      Object.keys(body).length > 0
+    ) {
       this.logger.debug(`Request body: ${JSON.stringify(body)}`);
     }
 
@@ -40,6 +50,11 @@ export class LoggerMiddleware implements NestMiddleware {
     res.on('finish', () => {
       const { statusCode } = res;
       const responseTime = Date.now() - startTime;
+
+      // Skip logging for favicon requests
+      if (shouldSkip) {
+        return;
+      }
 
       // Determine log level based on status code
       if (statusCode >= 500) {

@@ -35,11 +35,11 @@ async function bootstrap() {
     allowedHeaders: ['Content-Type', 'Authorization'],
   });
 
-  // Global prefix for API
-  const globalPrefix = process.env.API_PREFIX || 'api';
-  app.setGlobalPrefix(globalPrefix, {
-    exclude: ['health', '/', '.well-known/*'],
-  });
+  // Global prefix for API - OAuth server는 prefix 없이 운영
+  // const globalPrefix = process.env.API_PREFIX || 'api';
+  // app.setGlobalPrefix(globalPrefix, {
+  //   exclude: ['health', '/', '.well-known/*'],
+  // });
 
   const port = process.env.PORT || 3001;
   const host = process.env.HOST || '0.0.0.0';
@@ -47,7 +47,7 @@ async function bootstrap() {
   await app.listen(port, host);
 
   logger.log(
-    `🚀 Application is running on: http://${host}:${port}/${globalPrefix}`,
+    `🚀 Application is running on: http://${host}:${port}`,
   );
   logger.log(`📋 Health check: http://localhost:${port}/health`);
   logger.log(

@@ -68,11 +68,13 @@ export class AllExceptionsFilter implements ExceptionFilter {
       }
     }
 
-    // Log the error
-    this.logger.error(
-      `Error ${status} on ${request.method} ${request.url}`,
-      exception instanceof Error ? exception.stack : exception,
-    );
+    // Log the error (skip favicon.ico)
+    if (!request.url.includes('/favicon.ico')) {
+      this.logger.error(
+        `Error ${status} on ${request.method} ${request.url}`,
+        exception instanceof Error ? exception.stack : exception,
+      );
+    }
 
     // OAuth specific error handling
     if (request.path.startsWith('/oauth')) {
