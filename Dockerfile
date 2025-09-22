@@ -1,7 +1,7 @@
 # Multi-stage build for NestJS OAuth server with PostgreSQL support
 
 # Stage 1: Dependencies
-FROM node:22-slim AS deps
+FROM node:20-alpine AS deps
 
 WORKDIR /app
 
@@ -14,7 +14,7 @@ RUN npm install -g pnpm && \
     pnpm install --frozen-lockfile --prod
 
 # Stage 2: Builder
-FROM node:22-slim AS builder
+FROM node:20-alpine AS builder
 
 WORKDIR /app
 
@@ -33,12 +33,12 @@ COPY . .
 RUN pnpm run build
 
 # Stage 3: Production
-FROM node:22-slim AS runner
+FROM node:20-alpine AS runner
 
-# Install runtime dependencies
+# Install runtime dependencies (Alpine-based)
 RUN apk add --no-cache dumb-init postgresql-client
 
-# Create non-root user
+# Create non-root user (Alpine-based)
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nodejs -u 1001
 
