@@ -36,7 +36,7 @@ export class ValidateRedirectUri implements ValidatorConstraintInterface {
 }
 
 export class PostAuthorizeDto {
-  @IsNotEmpty({ message: 'student_id is required' })
+  @IsNotEmpty({ message: 'user_id is required' })
   @IsString()
   user_id: string;
 

@@ -37,7 +37,6 @@ export class UserRepository {
 
     // Create new user if not exists
     const insertPayload: typeof schema.users.$inferInsert = {
-      id: userId,
       email: `user-${userId}@example.com`, // Placeholder email
       name: `User ${userId.substring(0, 8)}`,
       lastLoginAt: new Date(),

@@ -24,6 +24,7 @@ CREATE TABLE "audit_logs" (
 	"entity_id" varchar(255),
 	"user_id" uuid,
 	"client_id" varchar(255),
+	"client_name" varchar(255),
 	"ip_address" "inet",
 	"user_agent" text,
 	"metadata" jsonb,
@@ -33,16 +34,14 @@ CREATE TABLE "audit_logs" (
 CREATE TABLE "auth_codes" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"code" varchar(512) NOT NULL,
-	"user_id" uuid NOT NULL,
+	"user_id" varchar(255) NOT NULL,
 	"client_id" varchar(255) NOT NULL,
 	"code_challenge" varchar(512),
 	"code_challenge_method" varchar(10) DEFAULT 'S256',
 	"redirect_uri" text NOT NULL,
-	"scope" text DEFAULT 'openid profile email',
+	"scope" text DEFAULT 'mcp:*',
 	"state" text,
-	"nonce" text,
-	"used_at" timestamp with time zone,
-	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now(),
 	"expires_at" timestamp with time zone NOT NULL,
 	CONSTRAINT "auth_codes_code_unique" UNIQUE("code")
 );
@@ -149,6 +148,7 @@ CREATE TABLE "whitelist" (
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
+ALTER TABLE "auth_codes" ADD CONSTRAINT "auth_codes_client_id_oauth_clients_client_id_fk" FOREIGN KEY ("client_id") REFERENCES "public"."oauth_clients"("client_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "user_sessions" ADD CONSTRAINT "user_sessions_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 CREATE UNIQUE INDEX "idx_access_tokens_hash" ON "access_tokens" USING btree ("token_hash");--> statement-breakpoint
 CREATE INDEX "idx_access_tokens_user_id" ON "access_tokens" USING btree ("user_id");--> statement-breakpoint

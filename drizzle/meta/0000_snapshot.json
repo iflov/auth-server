@@ -1,5 +1,5 @@
 {
-  "id": "78d027dc-1c4e-4edc-83a8-3c3c8cb780e4",
+  "id": "f8c6c04c-8432-4e02-9cfe-63edf04c750c",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -198,6 +198,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "client_name": {
+          "name": "client_name",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
         "ip_address": {
           "name": "ip_address",
           "type": "inet",
@@ -297,7 +303,7 @@
         },
         "user_id": {
           "name": "user_id",
-          "type": "uuid",
+          "type": "varchar(255)",
           "primaryKey": false,
           "notNull": true
         },
@@ -331,7 +337,7 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false,
-          "default": "'openid profile email'"
+          "default": "'mcp:*'"
         },
         "state": {
           "name": "state",
@@ -339,23 +345,11 @@
           "primaryKey": false,
           "notNull": false
         },
-        "nonce": {
-          "name": "nonce",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "used_at": {
-          "name": "used_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp with time zone",
           "primaryKey": false,
-          "notNull": true,
+          "notNull": false,
           "default": "now()"
         },
         "expires_at": {
@@ -412,7 +406,21 @@
           "with": {}
         }
       },
-      "foreignKeys": {},
+      "foreignKeys": {
+        "auth_codes_client_id_oauth_clients_client_id_fk": {
+          "name": "auth_codes_client_id_oauth_clients_client_id_fk",
+          "tableFrom": "auth_codes",
+          "tableTo": "oauth_clients",
+          "columnsFrom": [
+            "client_id"
+          ],
+          "columnsTo": [
+            "client_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "auth_codes_code_unique": {

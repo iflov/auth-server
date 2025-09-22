@@ -15,20 +15,19 @@ export interface CreateAuthorizationCodeInput {
   redirectUri: string;
   scope?: string;
   state?: string | null;
-  codeChallenge?: string | null;
+  codeChallenge: string; // Required for PKCE
   codeChallengeMethod?: string | null;
   expiresAt?: Date;
 }
 
 export interface AuthorizationCodeRecord {
-  id: string;
-  code: string;
+  code: string; // Primary key
   userId: string;
   clientId: string;
   redirectUri: string;
   scope: string;
   state: string | null;
-  codeChallenge: string | null;
+  codeChallenge: string;
   codeChallengeMethod: string | null;
   createdAt: Date;
   expiresAt: Date;
@@ -48,13 +47,11 @@ export interface CreateRefreshTokenInput {
 }
 
 export interface RefreshTokenRecord {
-  id: string;
-  refreshToken: string;
+  refreshToken: string; // Primary key
   userId: string;
   clientId: string;
   scope: string;
-  family: string | null;
-  status: TokenStatus;
+  revoked: boolean;
   createdAt: Date;
   expiresAt: Date | null;
   revokedAt: Date | null;
@@ -74,16 +71,12 @@ export interface SaveAccessTokenInput {
 }
 
 export interface AccessTokenRecord {
-  id: string;
-  tokenHash: string;
-  jti: string | null;
+  tokenHash: string; // Primary key
   userId: string;
   clientId: string;
   scope: string;
-  status: TokenStatus;
   createdAt: Date;
   expiresAt: Date;
-  revokedAt: Date | null;
 }
 
 // =====================
@@ -93,27 +86,22 @@ export interface CreateOAuthClientInput {
   clientId?: string;
   clientSecret?: string;
   clientName: string;
-  description?: string | null;
   redirectUris: string[];
   grantTypes?: string[];
   responseTypes?: string[];
   scope?: string;
   tokenEndpointAuthMethod?: string;
-  isActive?: boolean;
 }
 
 export interface OAuthClientRecord {
-  id: string;
-  clientId: string;
+  clientId: string; // Primary key
   clientSecret: string | null;
   clientName: string;
-  description: string | null;
   redirectUris: string[];
   grantTypes: string[];
   responseTypes: string[];
   scope: string;
   tokenEndpointAuthMethod: string;
-  isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -144,15 +132,9 @@ export interface EnsureUserInput {
 }
 
 export interface UserRecord {
-  id: string;
+  userId: string; // Primary key
   email: string | null;
-  username: string | null;
   name: string | null;
-  avatarUrl: string | null;
-  status: string;
-  role: string;
-  metadata: Record<string, unknown> | null;
-  preferences: Record<string, unknown> | null;
   lastLoginAt: Date | null;
   createdAt: Date;
   updatedAt: Date;

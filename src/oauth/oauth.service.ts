@@ -46,28 +46,19 @@ export class OauthService {
     userAgent: string;
     oauthClient: RequestRegisterDto;
   }) {
-    const clientId: string =
-      oauthClient.client_id ||
-      `client_${Date.now()}_${crypto.randomBytes(8).toString('hex')}`;
-
-    const clientSecret: string =
-      oauthClient.client_secret || crypto.randomBytes(32).toString('hex');
+    // Generate client credentials
+    const clientId: string = `client_${Date.now()}_${crypto.randomBytes(8).toString('hex')}`;
+    const clientSecret: string = crypto.randomBytes(32).toString('hex');
 
     const clientObject: CreateOAuthClientInput = {
       clientId,
       clientSecret,
-      clientName: oauthClient.client_name || 'Claude',
-      grantTypes: oauthClient.grant_types || [
-        'authorization_code',
-        'refresh_token',
-      ],
-      responseTypes: oauthClient.response_types || ['code'],
-      tokenEndpointAuthMethod:
-        oauthClient.token_endpoint_auth_method || 'client_secret_post',
-      scope: oauthClient.scope || 'claudeai',
-      redirectUris: oauthClient.redirect_uris || [
-        'https://claude.ai/api/mcp/auth_callback',
-      ],
+      clientName: oauthClient.client_name,
+      grantTypes: oauthClient.grant_types,
+      responseTypes: oauthClient.response_types,
+      tokenEndpointAuthMethod: oauthClient.token_endpoint_auth_method,
+      scope: oauthClient.scope || 'mcp:*',
+      redirectUris: oauthClient.redirect_uris,
     };
 
     const client = await this.oauthClientRepository.create(clientObject);
@@ -406,8 +397,6 @@ export class OauthService {
   async introspect(
     clientId: string,
     body: { token: string; token_type_hint?: string },
-    ip: string,
-    userAgent: string,
   ) {
     try {
       const { token, token_type_hint } = body;

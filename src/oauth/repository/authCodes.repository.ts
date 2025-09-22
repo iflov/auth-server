@@ -22,9 +22,9 @@ export class AuthCodesRepository {
       clientId: authCodeInput.clientId,
       redirectUri: authCodeInput.redirectUri,
       scope: authCodeInput.scope ?? undefined,
-      state: authCodeInput.state ?? null,
-      codeChallenge: authCodeInput.codeChallenge ?? null,
-      codeChallengeMethod: authCodeInput.codeChallengeMethod ?? null,
+      state: authCodeInput.state ?? undefined,
+      codeChallenge: authCodeInput.codeChallenge, // Required field
+      codeChallengeMethod: authCodeInput.codeChallengeMethod ?? undefined,
       expiresAt: authCodeInput.expiresAt,
     };
 

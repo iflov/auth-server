@@ -1,17 +1,13 @@
-import { IsString, IsNotEmpty, IsArray } from 'class-validator';
+import { IsString, IsNotEmpty, IsArray, IsOptional } from 'class-validator';
 
 export class RequestRegisterDto {
   @IsString()
   @IsNotEmpty()
-  client_id: string;
-
-  @IsString()
-  @IsNotEmpty()
-  client_secret: string;
-
-  @IsString()
-  @IsNotEmpty()
   client_name: string;
+
+  @IsArray()
+  @IsNotEmpty()
+  redirect_uris: string[];
 
   @IsArray()
   @IsNotEmpty()
@@ -26,10 +22,6 @@ export class RequestRegisterDto {
   token_endpoint_auth_method: string;
 
   @IsString()
-  @IsNotEmpty()
-  scope: string;
-
-  @IsArray()
-  @IsNotEmpty()
-  redirect_uris: string[];
+  @IsOptional()
+  scope?: string;
 }

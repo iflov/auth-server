@@ -23,13 +23,11 @@ export class OAuthClientRepository {
           clientId: oauthClient.clientId,
           clientSecret: oauthClient.clientSecret,
           clientName: oauthClient.clientName,
-          description: oauthClient.description,
           redirectUris: oauthClient.redirectUris,
           grantTypes: oauthClient.grantTypes,
           responseTypes: oauthClient.responseTypes,
           scope: oauthClient.scope,
           tokenEndpointAuthMethod: oauthClient.tokenEndpointAuthMethod,
-          isActive: oauthClient.isActive,
         })
         .returning();
 

@@ -1,270 +1,281 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>OAuth Authorization</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+          'Helvetica Neue', Arial, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 20px;
+      }
+
+      .container {
+        background: white;
+        padding: 40px;
+        border-radius: 12px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        width: 100%;
+        max-width: 400px;
+        animation: slideUp 0.3s ease-out;
+      }
+
+      @keyframes slideUp {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
         }
-        
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
+        to {
+          opacity: 1;
+          transform: translateY(0);
         }
-        
-        .container {
-            background: white;
-            padding: 40px;
-            border-radius: 12px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-            width: 100%;
-            max-width: 400px;
-            animation: slideUp 0.3s ease-out;
-        }
-        
-        @keyframes slideUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        
-        .logo {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        
-        .logo svg {
-            width: 60px;
-            height: 60px;
-            fill: #667eea;
-        }
-        
-        h1 {
-            color: #333;
-            font-size: 24px;
-            font-weight: 600;
-            text-align: center;
-            margin-bottom: 10px;
-        }
-        
-        .subtitle {
-            color: #666;
-            font-size: 14px;
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        
-        .form-group {
-            margin-bottom: 20px;
-        }
-        
-        label {
-            display: block;
-            color: #555;
-            font-size: 14px;
-            font-weight: 500;
-            margin-bottom: 8px;
-        }
-        
-        input[type="text"],
-        input[type="password"] {
-            width: 100%;
-            padding: 12px 16px;
-            border: 1px solid #e1e4e8;
-            border-radius: 8px;
-            font-size: 16px;
-            transition: all 0.2s;
-            background: #fafbfc;
-        }
-        
-        input[type="text"]:focus,
-        input[type="password"]:focus {
-            outline: none;
-            border-color: #667eea;
-            background: white;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-        
-        input[type="text"]::placeholder,
-        input[type="password"]::placeholder {
-            color: #999;
-        }
-        
-        button {
-            width: 100%;
-            padding: 14px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            box-shadow: 0 4px 6px rgba(102, 126, 234, 0.2);
-        }
-        
-        button:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 6px 12px rgba(102, 126, 234, 0.3);
-        }
-        
-        button:active {
-            transform: translateY(0);
-        }
-        
-        .info-box {
-            margin-top: 30px;
-            padding: 16px;
-            background: #f8f9fa;
-            border-radius: 8px;
-            border-left: 4px solid #667eea;
-        }
-        
-        .info-box h3 {
-            color: #333;
-            font-size: 14px;
-            font-weight: 600;
-            margin-bottom: 8px;
-        }
-        
-        .info-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px 0;
-            border-bottom: 1px solid #e1e4e8;
-            font-size: 14px;
-        }
-        
-        .info-item:last-child {
-            border-bottom: none;
-        }
-        
-        .info-label {
-            color: #666;
-            font-weight: 500;
-        }
-        
-        .info-value {
-            color: #333;
-            font-family: 'SF Mono', Monaco, 'Courier New', monospace;
-            font-size: 13px;
-            background: white;
-            padding: 2px 8px;
-            border-radius: 4px;
-        }
-        
-        .security-notice {
-            margin-top: 20px;
-            padding: 12px;
-            background: #fff3cd;
-            border: 1px solid #ffc107;
-            border-radius: 8px;
-            font-size: 13px;
-            color: #856404;
-            display: flex;
-            align-items: start;
-            gap: 10px;
-        }
-        
-        .security-notice svg {
-            width: 20px;
-            height: 20px;
-            flex-shrink: 0;
-            margin-top: 2px;
-            fill: #ffc107;
-        }
-        
-        .cancel-link {
-            display: block;
-            text-align: center;
-            margin-top: 20px;
-            color: #666;
-            text-decoration: none;
-            font-size: 14px;
-            transition: color 0.2s;
-        }
-        
-        .cancel-link:hover {
-            color: #333;
-        }
+      }
+
+      .logo {
+        text-align: center;
+        margin-bottom: 30px;
+      }
+
+      .logo svg {
+        width: 60px;
+        height: 60px;
+        fill: #667eea;
+      }
+
+      h1 {
+        color: #333;
+        font-size: 24px;
+        font-weight: 600;
+        text-align: center;
+        margin-bottom: 10px;
+      }
+
+      .subtitle {
+        color: #666;
+        font-size: 14px;
+        text-align: center;
+        margin-bottom: 30px;
+      }
+
+      .form-group {
+        margin-bottom: 20px;
+      }
+
+      label {
+        display: block;
+        color: #555;
+        font-size: 14px;
+        font-weight: 500;
+        margin-bottom: 8px;
+      }
+
+      input[type='text'],
+      input[type='password'] {
+        width: 100%;
+        padding: 12px 16px;
+        border: 1px solid #e1e4e8;
+        border-radius: 8px;
+        font-size: 16px;
+        transition: all 0.2s;
+        background: #fafbfc;
+      }
+
+      input[type='text']:focus,
+      input[type='password']:focus {
+        outline: none;
+        border-color: #667eea;
+        background: white;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+      }
+
+      input[type='text']::placeholder,
+      input[type='password']::placeholder {
+        color: #999;
+      }
+
+      button {
+        width: 100%;
+        padding: 14px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        box-shadow: 0 4px 6px rgba(102, 126, 234, 0.2);
+      }
+
+      button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 12px rgba(102, 126, 234, 0.3);
+      }
+
+      button:active {
+        transform: translateY(0);
+      }
+
+      .info-box {
+        margin-top: 30px;
+        padding: 16px;
+        background: #f8f9fa;
+        border-radius: 8px;
+        border-left: 4px solid #667eea;
+      }
+
+      .info-box h3 {
+        color: #333;
+        font-size: 14px;
+        font-weight: 600;
+        margin-bottom: 8px;
+      }
+
+      .info-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 0;
+        border-bottom: 1px solid #e1e4e8;
+        font-size: 14px;
+      }
+
+      .info-item:last-child {
+        border-bottom: none;
+      }
+
+      .info-label {
+        color: #666;
+        font-weight: 500;
+      }
+
+      .info-value {
+        color: #333;
+        font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+        font-size: 13px;
+        background: white;
+        padding: 2px 8px;
+        border-radius: 4px;
+      }
+
+      .security-notice {
+        margin-top: 20px;
+        padding: 12px;
+        background: #fff3cd;
+        border: 1px solid #ffc107;
+        border-radius: 8px;
+        font-size: 13px;
+        color: #856404;
+        display: flex;
+        align-items: start;
+        gap: 10px;
+      }
+
+      .security-notice svg {
+        width: 20px;
+        height: 20px;
+        flex-shrink: 0;
+        margin-top: 2px;
+        fill: #ffc107;
+      }
+
+      .cancel-link {
+        display: block;
+        text-align: center;
+        margin-top: 20px;
+        color: #666;
+        text-decoration: none;
+        font-size: 14px;
+        transition: color 0.2s;
+      }
+
+      .cancel-link:hover {
+        color: #333;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <div class="container">
-        <div class="logo">
-            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 2L2 7L12 12L22 7L12 2Z"/>
-                <path d="M2 17L12 22L22 17M2 12L12 17L22 12"/>
-            </svg>
+      <div class="logo">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2L2 7L12 12L22 7L12 2Z" />
+          <path d="M2 17L12 22L22 17M2 12L12 17L22 12" />
+        </svg>
+      </div>
+
+      <h1>Authorization Required</h1>
+      <p class="subtitle">Sign in to continue to {{CLIENT_NAME}}</p>
+
+      <form action="/oauth/authorize" method="post">
+        <div class="form-group">
+          <label for="user_id">User ID</label>
+          <input
+            type="text"
+            name="user_id"
+            id="user_id"
+            placeholder="Enter your user ID"
+            required
+            autocomplete="username"
+            autofocus
+          />
         </div>
-        
-        <h1>Authorization Required</h1>
-        <p class="subtitle">Sign in to continue to {{CLIENT_NAME}}</p>
-        
-        <form action="/oauth/authorize" method="post">
-            <div class="form-group">
-                <label for="student_id">Student ID</label>
-                <input 
-                    type="text" 
-                    name="student_id" 
-                    id="student_id" 
-                    placeholder="Enter your Student ID" 
-                    required
-                    autocomplete="username"
-                    autofocus
-                >
-            </div>
-            
-            <!-- Hidden fields for OAuth parameters -->
-            <input type="hidden" name="client_id" value="{{CLIENT_ID}}">
-            <input type="hidden" name="code_challenge" value="{{CODE_CHALLENGE}}">
-            <input type="hidden" name="code_challenge_method" value="{{CODE_CHALLENGE_METHOD}}">
-            <input type="hidden" name="redirect_uri" value="{{REDIRECT_URI}}">
-            <input type="hidden" name="response_type" value="{{RESPONSE_TYPE}}">
-            <input type="hidden" name="scope" value="{{SCOPE}}">
-            <input type="hidden" name="state" value="{{STATE}}">
-            
-            <button type="submit">Authorize Access</button>
-        </form>
-        
-        <div class="info-box">
-            <h3>Application Details</h3>
-            <div class="info-item">
-                <span class="info-label">Client ID</span>
-                <span class="info-value">{{CLIENT_ID}}</span>
-            </div>
-            <div class="info-item">
-                <span class="info-label">Requested Scope</span>
-                <span class="info-value">{{SCOPE}}</span>
-            </div>
+
+        <!-- Hidden fields for OAuth parameters -->
+        <input type="hidden" name="client_id" value="{{CLIENT_ID}}" />
+        <input type="hidden" name="code_challenge" value="{{CODE_CHALLENGE}}" />
+        <input
+          type="hidden"
+          name="code_challenge_method"
+          value="{{CODE_CHALLENGE_METHOD}}"
+        />
+        <input type="hidden" name="redirect_uri" value="{{REDIRECT_URI}}" />
+        <input type="hidden" name="response_type" value="{{RESPONSE_TYPE}}" />
+        <input type="hidden" name="scope" value="{{SCOPE}}" />
+        <input type="hidden" name="state" value="{{STATE}}" />
+
+        <button type="submit">Authorize Access</button>
+      </form>
+
+      <div class="info-box">
+        <h3>Application Details</h3>
+        <div class="info-item">
+          <span class="info-label">Client ID</span>
+          <span class="info-value">{{CLIENT_ID}}</span>
         </div>
-        
-        <div class="security-notice">
-            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 2L2 9V11C2 16.55 6.84 21.74 12 23C17.16 21.74 22 16.55 22 11V9L12 2Z"/>
-            </svg>
-            <div>
-                <strong>Security Notice:</strong> This application will have access to your basic profile information. Only authorize applications you trust.
-            </div>
+        <div class="info-item">
+          <span class="info-label">Requested Scope</span>
+          <span class="info-value">{{SCOPE}}</span>
         </div>
-        
-        <a href="{{REDIRECT_URI}}" class="cancel-link">Cancel and return to application</a>
+      </div>
+
+      <div class="security-notice">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path
+            d="M12 2L2 9V11C2 16.55 6.84 21.74 12 23C17.16 21.74 22 16.55 22 11V9L12 2Z"
+          />
+        </svg>
+        <div>
+          <strong>Security Notice:</strong> This application will have access to
+          your basic profile information. Only authorize applications you trust.
+        </div>
+      </div>
+
+      <a href="{{REDIRECT_URI}}" class="cancel-link"
+        >Cancel and return to application</a
+      >
     </div>
-</body>
+  </body>
 </html>

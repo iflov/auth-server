@@ -81,8 +81,8 @@ export const authCodes = pgTable(
   'auth_codes',
   {
     id: uuid('id').defaultRandom().primaryKey(),
-    code: varchar('code', { length: 512 }).primaryKey(),
-    userId: varchar('student_id', { length: 255 }).notNull(),
+    code: varchar('code', { length: 512 }).notNull().unique(),
+    userId: varchar('user_id', { length: 255 }).notNull(),
     clientId: varchar('client_id', { length: 255 })
       .notNull()
       .references(() => oauthClients.clientId, { onDelete: 'cascade' }),
@@ -157,7 +157,7 @@ export const accessTokens = pgTable(
 // User Management Tables
 // ============================================
 
-// Users table (replacing Students with enhanced fields)
+// Users table
 export const users = pgTable(
   'users',
   {

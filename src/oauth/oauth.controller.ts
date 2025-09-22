@@ -103,15 +103,8 @@ export class OauthController {
   async introspect(
     @ClientAuth() clientAuth: ClientAuthInfo,
     @Body() body: PostIntrospectDto,
-    @Ip() ip: string,
-    @Headers('user-agent') userAgent: string,
   ) {
-    return this.oauthService.introspect(
-      clientAuth.clientId,
-      body,
-      ip,
-      userAgent,
-    );
+    return this.oauthService.introspect(clientAuth.clientId, body);
   }
 
   @Post('revoke')
