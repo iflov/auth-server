@@ -3,20 +3,24 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
-import crypto from 'crypto';
+import * as crypto from 'crypto';
 import { ConfigService } from '@nestjs/config';
 import * as fs from 'fs';
 import * as path from 'path';
+import { JwtService } from '@nestjs/jwt';
 
 import { AuditLogsRepository } from './repository/auditLogs.repository';
 import { OAuthClientRepository } from './repository/oauthClient.repository';
+import { AuthCodesRepository } from './repository/authCodes.repository';
+import { RefreshTokenRepository } from './repository/refreshToken.repository';
+import { AccessTokenRepository } from './repository/accessToken.repository';
+import { UserRepository } from './repository/user.repository';
 import {
   AuditLogEntryInput,
   CreateOAuthClientInput,
 } from './types/oauth.types';
 import { normalizeUrlFunction } from '../utils/normalizeUrl';
 import { generateAuthCode } from '../utils/generateAuthCode';
-import { AuthCodesRepository } from './repository/authCodes.repository';
 import { RequestRegisterDto } from './dto/request-register.dto';
 import { PostAuthorizeDto } from './dto/post-authorize.dto';
 
@@ -26,7 +30,11 @@ export class OauthService {
     private readonly oauthClientRepository: OAuthClientRepository,
     private readonly auditLogsRepository: AuditLogsRepository,
     private readonly authCodesRepository: AuthCodesRepository,
+    private readonly refreshTokenRepository: RefreshTokenRepository,
+    private readonly accessTokenRepository: AccessTokenRepository,
+    private readonly userRepository: UserRepository,
     private readonly configService: ConfigService,
+    private readonly jwtService: JwtService,
   ) {}
 
   async register({
@@ -140,6 +148,201 @@ export class OauthService {
   }
 
   /**
+   * Token exchange - authorization code를 access token으로 교환
+   */
+  async exchangeToken(
+    params: {
+      grant_type?: string;
+      code?: string;
+      redirect_uri?: string;
+      client_id?: string;
+      clientId?: string;
+      code_verifier?: string;
+      refresh_token?: string;
+      scope?: string;
+      isAuthenticated?: boolean;
+    },
+    ip: string,
+    userAgent: string,
+  ) {
+    const { grant_type } = params;
+    let userId: string | null = null;
+    let clientId: string | null = null;
+    let scope = 'default';
+
+    if (grant_type === 'authorization_code') {
+      // Validate required parameters
+      if (!params.code) {
+        throw new BadRequestException({
+          error: 'invalid_request',
+          error_description: 'Missing authorization code',
+        });
+      }
+
+      // Find the authorization code
+      const authCode = await this.authCodesRepository.findByCode(params.code);
+      if (!authCode) {
+        throw new BadRequestException({
+          error: 'invalid_grant',
+          error_description: 'Invalid or expired authorization code',
+        });
+      }
+
+      // Verify client_id matches
+      const requestClientId = params.clientId || params.client_id;
+      if (!requestClientId || requestClientId !== authCode.clientId) {
+        throw new BadRequestException({
+          error: 'invalid_grant',
+          error_description: 'Client mismatch',
+        });
+      }
+
+      // For public clients (no authentication), PKCE is required
+      if (!params.isAuthenticated) {
+        if (!params.code_verifier) {
+          throw new BadRequestException({
+            error: 'invalid_request',
+            error_description: 'code_verifier required for public clients',
+          });
+        }
+
+        // Verify PKCE challenge
+        const challenge = this.computeChallenge(params.code_verifier);
+        if (challenge !== authCode.codeChallenge) {
+          await this.auditLogsRepository.create({
+            eventType: 'invalid_pkce',
+            clientId: authCode.clientId,
+            userId: null,
+            ipAddress: ip,
+            userAgent: userAgent,
+          });
+
+          throw new BadRequestException({
+            error: 'invalid_grant',
+            error_description: 'Invalid code_verifier',
+          });
+        }
+      }
+      // For confidential clients, PKCE is optional but validated if present
+      else if (params.code_verifier) {
+        const challenge = this.computeChallenge(params.code_verifier);
+        if (challenge !== authCode.codeChallenge) {
+          throw new BadRequestException({
+            error: 'invalid_grant',
+            error_description: 'Invalid code_verifier',
+          });
+        }
+      }
+
+      // Verify redirect_uri if provided
+      if (params.redirect_uri && params.redirect_uri !== authCode.redirectUri) {
+        throw new BadRequestException({
+          error: 'invalid_grant',
+          error_description: 'Redirect URI mismatch',
+        });
+      }
+
+      userId = authCode.userId;
+      clientId = authCode.clientId;
+      scope = authCode.scope || 'default';
+
+      // Delete the used authorization code
+      await this.authCodesRepository.deleteByCode(params.code);
+    } else if (grant_type === 'refresh_token') {
+      // Validate refresh token
+      if (!params.refresh_token) {
+        throw new BadRequestException({
+          error: 'invalid_request',
+          error_description: 'Missing refresh_token',
+        });
+      }
+
+      // Validate the refresh token with JWT
+      const tokenPayload = await this.validateRefreshToken(
+        params.refresh_token,
+      );
+      if (!tokenPayload) {
+        throw new BadRequestException({
+          error: 'invalid_grant',
+          error_description: 'Invalid or expired refresh token',
+        });
+      }
+
+      // Check in database
+      const dbToken = await this.refreshTokenRepository.findByToken(
+        params.refresh_token,
+      );
+      if (!dbToken) {
+        throw new BadRequestException({
+          error: 'invalid_grant',
+          error_description: 'Refresh token not found or revoked',
+        });
+      }
+
+      // For refresh token grant, verify client matches if authenticated
+      if (params.isAuthenticated && params.clientId) {
+        if (params.clientId !== dbToken.clientId) {
+          throw new BadRequestException({
+            error: 'invalid_grant',
+            error_description: 'Client mismatch for refresh token',
+          });
+        }
+      }
+
+      userId = tokenPayload.sub;
+      clientId = dbToken.clientId;
+      scope = dbToken.scope || 'default';
+    } else {
+      throw new BadRequestException({
+        error: 'unsupported_grant_type',
+        error_description: `Grant type "${grant_type}" is not supported`,
+      });
+    }
+
+    // Generate new tokens
+    const { accessToken, expiresIn } = await this.createAccessToken(userId);
+    const { refreshToken } = await this.createRefreshToken(userId);
+
+    // Store refresh token in database
+    await this.refreshTokenRepository.create({
+      refreshToken,
+      userId,
+      clientId,
+      scope,
+    });
+
+    // Store access token hash for introspection (optional)
+    const tokenHash = this.hashToken(accessToken);
+    await this.accessTokenRepository.create({
+      tokenHash,
+      userId,
+      clientId,
+      scope,
+    });
+
+    // Update or create user record
+    await this.userRepository.findOrCreate(userId);
+
+    // Log successful token issuance
+    await this.auditLogsRepository.create({
+      eventType: 'token_issued',
+      userId,
+      clientId,
+      ipAddress: ip,
+      userAgent: userAgent,
+    });
+
+    // Return tokens
+    return {
+      access_token: accessToken,
+      token_type: 'Bearer',
+      expires_in: expiresIn,
+      refresh_token: refreshToken,
+      scope: scope,
+    };
+  }
+
+  /**
    * OAuth 인증 페이지 렌더링
    */
   async renderAuthorizePage(params: {
@@ -195,5 +398,96 @@ export class OauthService {
       console.error('Error rendering authorize page:', error);
       throw error;
     }
+  }
+
+  /**
+   * Helper Methods for Token Management
+   */
+
+  /**
+   * Create an access token for the user
+   */
+  private async createAccessToken(
+    userId: string,
+  ): Promise<{ accessToken: string; expiresIn: number }> {
+    const expiresIn = this.configService.get<number>(
+      'auth.accessTokenExpiry',
+      3600, // Default 1 hour
+    );
+
+    const payload = {
+      sub: userId,
+      type: 'access',
+      iat: Math.floor(Date.now() / 1000),
+      exp: Math.floor(Date.now() / 1000) + expiresIn,
+    };
+
+    const accessToken = this.jwtService.sign(payload, {
+      expiresIn,
+    });
+
+    return { accessToken, expiresIn };
+  }
+
+  /**
+   * Create a refresh token for the user
+   */
+  private async createRefreshToken(
+    userId: string,
+  ): Promise<{ refreshToken: string; expiresIn: number }> {
+    const expiresIn = this.configService.get<number>(
+      'auth.refreshTokenExpiry',
+      2592000, // Default 30 days
+    );
+
+    const payload = {
+      sub: userId,
+      type: 'refresh',
+      iat: Math.floor(Date.now() / 1000),
+      exp: Math.floor(Date.now() / 1000) + expiresIn,
+    };
+
+    const refreshToken = this.jwtService.sign(payload, {
+      expiresIn,
+    });
+
+    return { refreshToken, expiresIn };
+  }
+
+  /**
+   * Validate a refresh token
+   */
+  private async validateRefreshToken(token: string): Promise<any | null> {
+    try {
+      const payload = this.jwtService.verify(token);
+
+      // Check token type
+      if (payload.type !== 'refresh') {
+        return null;
+      }
+
+      return payload;
+    } catch (error) {
+      // Token is invalid or expired
+      return null;
+    }
+  }
+
+  /**
+   * Compute PKCE challenge from verifier
+   */
+  private computeChallenge(verifier: string): string {
+    const hash = crypto
+      .createHash('sha256')
+      .update(verifier)
+      .digest('base64url');
+    return hash;
+  }
+
+  /**
+   * Hash a token for storage
+   */
+  private hashToken(token: string): string {
+    return crypto.createHash('sha256').update(token).digest('hex');
   }
 }

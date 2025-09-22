@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import { eq } from 'drizzle-orm';
 
 import * as schema from '../../database/schema';
 import { DrizzleService } from '../../database/drizzle.service';
@@ -35,11 +36,35 @@ export class AuthCodesRepository {
     return authCode;
   }
 
-  async find() {}
+  async findByCode(code: string) {
+    const [authCode] = await this.db
+      .select()
+      .from(schema.authCodes)
+      .where(eq(schema.authCodes.code, code))
+      .limit(1);
 
-  async findOne() {}
+    if (!authCode) {
+      return null;
+    }
 
-  async update() {}
+    // Check if expired
+    if (authCode.expiresAt < new Date()) {
+      await this.deleteByCode(code);
+      return null;
+    }
 
-  async delete() {}
+    return authCode;
+  }
+
+  async deleteByCode(code: string) {
+    await this.db
+      .delete(schema.authCodes)
+      .where(eq(schema.authCodes.code, code));
+  }
+
+  async deleteExpired() {
+    await this.db
+      .delete(schema.authCodes)
+      .where(eq(schema.authCodes.expiresAt, new Date()));
+  }
 }

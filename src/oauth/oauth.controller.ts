@@ -8,6 +8,7 @@ import {
   UseFilters,
   Query,
   Header,
+  UseGuards,
 } from '@nestjs/common';
 import { Body } from '@nestjs/common';
 
@@ -16,8 +17,13 @@ import { RequestRegisterDto } from './dto/request-register.dto';
 import { PostAuthorizeDto } from './dto/post-authorize.dto';
 import { GetAuthorizeDto } from './dto/get-authorize.dto';
 import { OAuthValidationExceptionFilter } from './filters/oauth-validation.filter';
+import { OAuthUnauthorizedFilter } from './filters/oauth-unauthorized.filter';
+import { ClientAuthGuard, ClientAuthInfo } from './guards/client-auth.guard';
+import { ClientAuth } from './decorators/client-auth.decorator';
+import { TokenRequestDto } from './dto/post-token.dto';
 
 @Controller('oauth')
+@UseFilters(OAuthUnauthorizedFilter) // Apply OAuth 401 filter to all routes
 export class OauthController {
   constructor(private readonly oauthService: OauthService) {}
 
@@ -66,5 +72,27 @@ export class OauthController {
 
     // NestJS가 자동으로 Content-Type을 설정합니다
     return authorizeHtml;
+  }
+
+  @Post('token')
+  @UseGuards(ClientAuthGuard)
+  async token(
+    @ClientAuth() clientAuth: ClientAuthInfo,
+    @Body() body: TokenRequestDto,
+    @Ip() ip: string,
+    @Headers('user-agent') userAgent: string,
+  ) {
+    // clientAuth로 인증된 클라이언트 정보 사용
+    console.log('Client:', clientAuth.clientId);
+
+    return this.oauthService.exchangeToken(
+      {
+        ...body,
+        clientId: clientAuth.clientId,
+        isAuthenticated: clientAuth.authenticated,
+      },
+      ip,
+      userAgent,
+    );
   }
 }

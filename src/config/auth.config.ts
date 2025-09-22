@@ -13,6 +13,18 @@ export default registerAs('auth', () => {
     jwtSecret: process.env.JWT_SECRET || 'your-secret-key-change-in-production',
     jwtAlgorithm: process.env.JWT_ALGORITHM || 'HS256',
 
+    // JWT 토큰 만료 시간 설정
+    accessTokenExpiry: parseInt(
+      process.env.JWT_ACCESS_TOKEN_EXPIRY || '3600',
+      10,
+    ), // 1시간
+    refreshTokenExpiry: parseInt(
+      process.env.JWT_REFRESH_TOKEN_EXPIRY || '2592000',
+      10,
+    ), // 30일
+    issuer: process.env.JWT_ISSUER || 'oauth-server',
+    audience: process.env.JWT_AUDIENCE || 'oauth-client',
+
     // OAuth 토큰 만료 시간 (초 단위)
     oauthTokenExpiry: parseInt(process.env.OAUTH_TOKEN_EXPIRY || '3600', 10), // 1시간
     oauthRefreshTokenExpiry: parseInt(
@@ -43,6 +55,24 @@ export default registerAs('auth', () => {
       .valid('HS256', 'HS384', 'HS512', 'RS256', 'RS384', 'RS512')
       .required()
       .description('JWT 서명 알고리즘'),
+
+    accessTokenExpiry: Joi.number()
+      .integer()
+      .min(60) // 최소 1분
+      .max(86400) // 최대 24시간
+      .required()
+      .description('JWT 액세스 토큰 만료 시간 (초)'),
+
+    refreshTokenExpiry: Joi.number()
+      .integer()
+      .min(3600) // 최소 1시간
+      .max(31536000) // 최대 1년
+      .required()
+      .description('JWT 리프레시 토큰 만료 시간 (초)'),
+
+    issuer: Joi.string().required().description('JWT issuer claim'),
+
+    audience: Joi.string().required().description('JWT audience claim'),
 
     oauthTokenExpiry: Joi.number()
       .integer()
