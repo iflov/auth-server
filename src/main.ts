@@ -4,6 +4,7 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
+import { SnakeCaseInterceptor } from './common/interceptors/snake-case.interceptor';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
@@ -23,6 +24,9 @@ async function bootstrap() {
 
   // Global exception filter
   app.useGlobalFilters(new AllExceptionsFilter());
+
+  // Global response interceptor to convert camelCase keys to snake_case
+  app.useGlobalInterceptors(new SnakeCaseInterceptor());
 
   // CORS configuration
   const corsOrigins = process.env.CORS_ORIGINS?.split(',') || [
@@ -46,9 +50,7 @@ async function bootstrap() {
 
   await app.listen(port, host);
 
-  logger.log(
-    `🚀 Application is running on: http://${host}:${port}`,
-  );
+  logger.log(`🚀 Application is running on: http://${host}:${port}`);
   logger.log(`📋 Health check: http://localhost:${port}/health`);
   logger.log(
     `🔐 OAuth metadata: http://localhost:${port}/.well-known/oauth-authorization-server`,

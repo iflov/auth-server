@@ -516,7 +516,6 @@ export class OauthService {
       sub: userId,
       type: 'access',
       iat: Math.floor(Date.now() / 1000),
-      exp: Math.floor(Date.now() / 1000) + expiresIn,
     };
 
     const accessToken = this.jwtService.sign(payload, {
@@ -541,7 +540,6 @@ export class OauthService {
       sub: userId,
       type: 'refresh',
       iat: Math.floor(Date.now() / 1000),
-      exp: Math.floor(Date.now() / 1000) + expiresIn,
     };
 
     const refreshToken = this.jwtService.sign(payload, {

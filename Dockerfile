@@ -53,6 +53,7 @@ COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
 COPY --chown=nodejs:nodejs package*.json ./
 COPY --chown=nodejs:nodejs drizzle.config.ts ./
 COPY --chown=nodejs:nodejs drizzle ./drizzle
+COPY --chown=nodejs:nodejs templates ./templates
 
 # Switch to non-root user
 USER nodejs

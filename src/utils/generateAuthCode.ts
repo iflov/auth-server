@@ -1,4 +1,4 @@
-import crypto from 'crypto';
+import { randomBytes } from 'crypto';
 
 const base64UrlEncode = (buffer: Buffer) => {
   return buffer
@@ -9,5 +9,5 @@ const base64UrlEncode = (buffer: Buffer) => {
 };
 
 export const generateAuthCode = () => {
-  return base64UrlEncode(crypto.randomBytes(32));
+  return base64UrlEncode(randomBytes(32));
 };

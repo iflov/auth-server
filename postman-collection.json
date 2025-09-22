@@ -22,7 +22,12 @@
     },
     {
       "key": "redirectUri",
-      "value": "http://localhost:3000/callback",
+      "value": "http://127.0.0.1:3000/callback",
+      "type": "string"
+    },
+    {
+      "key": "userId",
+      "value": "00000000-0000-0000-0000-000000000001",
       "type": "string"
     },
     {
@@ -62,8 +67,12 @@
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/health",
-              "host": ["{{baseUrl}}"],
-              "path": ["health"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health"
+              ]
             }
           }
         },
@@ -74,8 +83,13 @@
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/.well-known/oauth-authorization-server",
-              "host": ["{{baseUrl}}"],
-              "path": [".well-known", "oauth-authorization-server"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                ".well-known",
+                "oauth-authorization-server"
+              ]
             }
           }
         }
@@ -97,6 +111,9 @@
                   "    pm.collectionVariables.set('clientSecret', response.client_secret);",
                   "    console.log('Client ID:', response.client_id);",
                   "    console.log('Client Secret:', response.client_secret);",
+                  "} else {",
+                  "    pm.collectionVariables.unset('clientId');",
+                  "    pm.collectionVariables.unset('clientSecret');",
                   "}"
                 ],
                 "type": "text/javascript"
@@ -113,12 +130,17 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"client_name\": \"Test Application\",\n  \"redirect_uris\": [\"http://localhost:3000/callback\", \"http://localhost:3001/callback\"],\n  \"grant_types\": [\"authorization_code\", \"refresh_token\"],\n  \"response_types\": [\"code\"],\n  \"scope\": \"mcp:*\",\n  \"token_endpoint_auth_method\": \"client_secret_post\"\n}"
+              "raw": "{\n  \"client_name\": \"Test Application\",\n  \"redirect_uris\": [\"http://127.0.0.1:3000/callback\", \"http://localhost:3001/callback\"],\n  \"grant_types\": [\"authorization_code\", \"refresh_token\"],\n  \"response_types\": [\"code\"],\n  \"scope\": \"mcp:*\",\n  \"token_endpoint_auth_method\": \"client_secret_post\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/oauth/register",
-              "host": ["{{baseUrl}}"],
-              "path": ["oauth", "register"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "oauth",
+                "register"
+              ]
             }
           }
         }
@@ -134,8 +156,13 @@
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/oauth/authorize?client_id={{clientId}}&redirect_uri={{redirectUri}}&response_type=code&scope=mcp:*&state=test-state&code_challenge={{codeChallenge}}&code_challenge_method=S256",
-              "host": ["{{baseUrl}}"],
-              "path": ["oauth", "authorize"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "oauth",
+                "authorize"
+              ],
               "query": [
                 {
                   "key": "client_id",
@@ -167,11 +194,38 @@
                 }
               ]
             },
-            "description": "Open this URL in browser to get authorization code"
+            "description": "\ube0c\ub77c\uc6b0\uc800\uc5d0\uc11c \uc5f4\uc5b4 \uc2b9\uc778 \ud654\uba74\uc744 \ud655\uc778\ud558\uac70\ub098, \ud544\uc694 \uc2dc \uc9c1\uc811 \ud638\ucd9c\ub9cc \uc218\ud589\ud569\ub2c8\ub2e4."
           }
         },
         {
           "name": "Submit Authorization",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 302) {",
+                  "    const location = pm.response.headers.get('Location');",
+                  "    if (location) {",
+                  "        const url = new URL(location);",
+                  "        const code = url.searchParams.get('code');",
+                  "        const state = url.searchParams.get('state');",
+                  "        if (code) {",
+                  "            pm.collectionVariables.set('authCode', code);",
+                  "            if (state) {",
+                  "                pm.collectionVariables.set('state', state);",
+                  "            }",
+                  "            console.log('Authorization code captured:', code);",
+                  "        }",
+                  "    }",
+                  "} else {",
+                  "    pm.collectionVariables.unset('authCode');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "request": {
             "method": "POST",
             "header": [
@@ -192,10 +246,6 @@
                   "value": "{{redirectUri}}"
                 },
                 {
-                  "key": "response_type",
-                  "value": "code"
-                },
-                {
                   "key": "scope",
                   "value": "mcp:*"
                 },
@@ -211,17 +261,23 @@
                   "key": "code_challenge_method",
                   "value": "S256"
                 },
-                {
-                  "key": "user_id",
-                  "value": "test-user-123"
-                }
-              ]
+        {
+          "key": "user_id",
+          "value": "{{userId}}"
+        }
+      ]
             },
             "url": {
               "raw": "{{baseUrl}}/oauth/authorize",
-              "host": ["{{baseUrl}}"],
-              "path": ["oauth", "authorize"]
-            }
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "oauth",
+                "authorize"
+              ]
+            },
+            "description": "Postman\uc5d0\uc11c\ub294 \uc790\ub3d9 \ub9ac\ub2e4\uc774\ub809\ud2b8 \uc635\uc158\uc744 \ub044\uace0 \uc2e4\ud589\ud574\uc57c Location \ud5e4\ub354\uc758 code\ub97c \ucea1\ucc98\ud560 \uc218 \uc788\uc2b5\ub2c8\ub2e4."
           }
         }
       ]
@@ -242,6 +298,9 @@
                   "    pm.collectionVariables.set('refreshToken', response.refresh_token);",
                   "    console.log('Access Token:', response.access_token);",
                   "    console.log('Refresh Token:', response.refresh_token);",
+                  "} else {",
+                  "    pm.collectionVariables.unset('accessToken');",
+                  "    pm.collectionVariables.unset('refreshToken');",
                   "}"
                 ],
                 "type": "text/javascript"
@@ -253,17 +312,47 @@
             "header": [
               {
                 "key": "Content-Type",
-                "value": "application/json"
+                "value": "application/x-www-form-urlencoded"
               }
             ],
             "body": {
-              "mode": "raw",
-              "raw": "{\n  \"grant_type\": \"authorization_code\",\n  \"code\": \"{{authCode}}\",\n  \"redirect_uri\": \"{{redirectUri}}\",\n  \"client_id\": \"{{clientId}}\",\n  \"client_secret\": \"{{clientSecret}}\",\n  \"code_verifier\": \"{{codeVerifier}}\"\n}"
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "grant_type",
+                  "value": "authorization_code"
+                },
+                {
+                  "key": "code",
+                  "value": "{{authCode}}"
+                },
+                {
+                  "key": "redirect_uri",
+                  "value": "{{redirectUri}}"
+                },
+                {
+                  "key": "client_id",
+                  "value": "{{clientId}}"
+                },
+                {
+                  "key": "client_secret",
+                  "value": "{{clientSecret}}"
+                },
+                {
+                  "key": "code_verifier",
+                  "value": "{{codeVerifier}}"
+                }
+              ]
             },
             "url": {
               "raw": "{{baseUrl}}/oauth/token",
-              "host": ["{{baseUrl}}"],
-              "path": ["oauth", "token"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "oauth",
+                "token"
+              ]
             }
           }
         },
@@ -281,6 +370,8 @@
                   "        pm.collectionVariables.set('refreshToken', response.refresh_token);",
                   "    }",
                   "    console.log('New Access Token:', response.access_token);",
+                  "} else {",
+                  "    pm.collectionVariables.unset('accessToken');",
                   "}"
                 ],
                 "type": "text/javascript"
@@ -292,17 +383,39 @@
             "header": [
               {
                 "key": "Content-Type",
-                "value": "application/json"
+                "value": "application/x-www-form-urlencoded"
               }
             ],
             "body": {
-              "mode": "raw",
-              "raw": "{\n  \"grant_type\": \"refresh_token\",\n  \"refresh_token\": \"{{refreshToken}}\",\n  \"client_id\": \"{{clientId}}\",\n  \"client_secret\": \"{{clientSecret}}\"\n}"
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "grant_type",
+                  "value": "refresh_token"
+                },
+                {
+                  "key": "refresh_token",
+                  "value": "{{refreshToken}}"
+                },
+                {
+                  "key": "client_id",
+                  "value": "{{clientId}}"
+                },
+                {
+                  "key": "client_secret",
+                  "value": "{{clientSecret}}"
+                }
+              ]
             },
             "url": {
               "raw": "{{baseUrl}}/oauth/token",
-              "host": ["{{baseUrl}}"],
-              "path": ["oauth", "token"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "oauth",
+                "token"
+              ]
             }
           }
         },
@@ -313,17 +426,39 @@
             "header": [
               {
                 "key": "Content-Type",
-                "value": "application/json"
+                "value": "application/x-www-form-urlencoded"
               }
             ],
             "body": {
-              "mode": "raw",
-              "raw": "{\n  \"token\": \"{{accessToken}}\",\n  \"token_type_hint\": \"access_token\",\n  \"client_id\": \"{{clientId}}\",\n  \"client_secret\": \"{{clientSecret}}\"\n}"
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}"
+                },
+                {
+                  "key": "token_type_hint",
+                  "value": "access_token"
+                },
+                {
+                  "key": "client_id",
+                  "value": "{{clientId}}"
+                },
+                {
+                  "key": "client_secret",
+                  "value": "{{clientSecret}}"
+                }
+              ]
             },
             "url": {
               "raw": "{{baseUrl}}/oauth/introspect",
-              "host": ["{{baseUrl}}"],
-              "path": ["oauth", "introspect"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "oauth",
+                "introspect"
+              ]
             }
           }
         },
@@ -334,17 +469,39 @@
             "header": [
               {
                 "key": "Content-Type",
-                "value": "application/json"
+                "value": "application/x-www-form-urlencoded"
               }
             ],
             "body": {
-              "mode": "raw",
-              "raw": "{\n  \"token\": \"{{accessToken}}\",\n  \"token_type_hint\": \"access_token\",\n  \"client_id\": \"{{clientId}}\",\n  \"client_secret\": \"{{clientSecret}}\"\n}"
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}"
+                },
+                {
+                  "key": "token_type_hint",
+                  "value": "access_token"
+                },
+                {
+                  "key": "client_id",
+                  "value": "{{clientId}}"
+                },
+                {
+                  "key": "client_secret",
+                  "value": "{{clientSecret}}"
+                }
+              ]
             },
             "url": {
               "raw": "{{baseUrl}}/oauth/revoke",
-              "host": ["{{baseUrl}}"],
-              "path": ["oauth", "revoke"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "oauth",
+                "revoke"
+              ]
             }
           }
         }
