@@ -160,6 +160,9 @@ export class OauthService {
     let userId: string | null = null;
     let clientId: string | null = null;
     let scope = 'default';
+    let existingRefreshToken:
+      | Awaited<ReturnType<RefreshTokenRepository['findByToken']>>
+      | null = null;
 
     if (grant_type === 'authorization_code') {
       // Validate required parameters
@@ -270,6 +273,8 @@ export class OauthService {
         });
       }
 
+      existingRefreshToken = dbToken;
+
       // For refresh token grant, verify client matches if authenticated
       if (params.isAuthenticated && params.clientId) {
         if (params.clientId !== dbToken.clientId) {
@@ -294,13 +299,26 @@ export class OauthService {
     const { accessToken, expiresIn } = await this.createAccessToken(userId);
     const { refreshToken } = await this.createRefreshToken(userId);
 
-    // Store refresh token in database
-    await this.refreshTokenRepository.create({
-      refreshToken,
-      userId,
-      clientId,
-      scope,
-    });
+    if (grant_type === 'refresh_token' && params.refresh_token) {
+      const tokenFamily =
+        existingRefreshToken?.family || existingRefreshToken?.id || null;
+
+      await this.refreshTokenRepository.rotateToken(params.refresh_token, {
+        refreshToken,
+        userId,
+        clientId,
+        scope,
+        family: tokenFamily,
+      });
+    } else {
+      // Store refresh token in database for initial issuance
+      await this.refreshTokenRepository.create({
+        refreshToken,
+        userId,
+        clientId,
+        scope,
+      });
+    }
 
     // Store access token hash for introspection (optional)
     const tokenHash = this.hashToken(accessToken);

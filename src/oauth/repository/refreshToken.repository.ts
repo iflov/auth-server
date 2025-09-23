@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
+import * as crypto from 'crypto';
 
 import * as schema from '../../database/schema';
 import { DrizzleService } from '../../database/drizzle.service';
@@ -10,6 +11,8 @@ export interface CreateRefreshTokenInput {
   userId: string;
   clientId: string;
   scope: string;
+  family?: string | null;
+  expiresAt?: Date;
 }
 
 @Injectable()
@@ -22,13 +25,20 @@ export class RefreshTokenRepository {
   }
 
   async create(input: CreateRefreshTokenInput) {
-    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
+    const expiresAt =
+      input.expiresAt || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
+    const family =
+      input.family ||
+      (typeof crypto.randomUUID === 'function'
+        ? crypto.randomUUID()
+        : crypto.randomBytes(16).toString('hex'));
 
     const insertPayload: typeof schema.refreshTokens.$inferInsert = {
       refreshToken: input.refreshToken,
       userId: input.userId,
       clientId: input.clientId,
       scope: input.scope,
+      family,
       expiresAt,
     };
 
@@ -44,7 +54,12 @@ export class RefreshTokenRepository {
     const [refreshToken] = await this.db
       .select()
       .from(schema.refreshTokens)
-      .where(eq(schema.refreshTokens.refreshToken, token))
+      .where(
+        and(
+          eq(schema.refreshTokens.refreshToken, token),
+          eq(schema.refreshTokens.status, 'active'),
+        ),
+      )
       .limit(1);
 
     if (!refreshToken) {
@@ -66,6 +81,60 @@ export class RefreshTokenRepository {
       .where(eq(schema.refreshTokens.refreshToken, token));
   }
 
+  async markAsRevoked(token: string) {
+    await this.db
+      .update(schema.refreshTokens)
+      .set({
+        status: 'revoked',
+        revokedAt: new Date(),
+      })
+      .where(eq(schema.refreshTokens.refreshToken, token));
+  }
+
+  async rotateToken(oldToken: string, input: CreateRefreshTokenInput) {
+    return this.drizzleService.transaction(async (tx) => {
+      const [revokedToken] = await tx
+        .update(schema.refreshTokens)
+        .set({
+          status: 'revoked',
+          revokedAt: new Date(),
+        })
+        .where(
+          and(
+            eq(schema.refreshTokens.refreshToken, oldToken),
+            eq(schema.refreshTokens.status, 'active'),
+          ),
+        )
+        .returning({ id: schema.refreshTokens.id });
+
+      if (!revokedToken) {
+        throw new Error('Refresh token not found or already revoked');
+      }
+
+      const expiresAt =
+        input.expiresAt || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+      const family =
+        input.family ||
+        (typeof crypto.randomUUID === 'function'
+          ? crypto.randomUUID()
+          : crypto.randomBytes(16).toString('hex'));
+
+      const [refreshToken] = await tx
+        .insert(schema.refreshTokens)
+        .values({
+          refreshToken: input.refreshToken,
+          userId: input.userId,
+          clientId: input.clientId,
+          scope: input.scope,
+          family,
+          expiresAt,
+        })
+        .returning();
+
+      return refreshToken;
+    });
+  }
+
   async deleteByUserId(userId: string) {
     await this.db
       .delete(schema.refreshTokens)
@@ -80,6 +149,6 @@ export class RefreshTokenRepository {
 
   async revokeToken(token: string) {
     // Same as deleteByToken but named for clarity in revocation context
-    await this.deleteByToken(token);
+    await this.markAsRevoked(token);
   }
 }
