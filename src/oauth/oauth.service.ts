@@ -160,9 +160,9 @@ export class OauthService {
     let userId: string | null = null;
     let clientId: string | null = null;
     let scope = 'default';
-    let existingRefreshToken:
-      | Awaited<ReturnType<RefreshTokenRepository['findByToken']>>
-      | null = null;
+    let existingRefreshToken: Awaited<
+      ReturnType<RefreshTokenRepository['findByToken']>
+    > | null = null;
 
     if (grant_type === 'authorization_code') {
       // Validate required parameters
