@@ -121,6 +121,3 @@ Docker 빌드 시 `.env` 값이 그대로 사용되므로, 포트/계정 정보�
 - 승인 화면은 `templates/authorize.html`을 원하는 UI로 자유롭게 수정할 수 있습니다.
 - 토큰 발급 시 JWT 페이로드에 `exp`를 직접 추가하지 말고, `expiresIn` 옵션을 사용해 jsonwebtoken 경고를 피하도록 구현되어 있습니다.
 - JSON 응답은 snake_case이지만, 내부 TypeScript 코드에서는 camelCase를 그대로 사용하며 인터셉터가 변환합니다.
-
-## 라이선스
-본 저장소는 사내 프로젝트로 사용하며 공개 라이선스가 지정되어 있지 않습니다 (`UNLICENSED`).
